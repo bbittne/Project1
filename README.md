@@ -3,16 +3,6 @@ ST558 - Project 1
 Bryan Bittner
 2022-06-14
 
-``` r
-rmarkdown::render("_Rmd/Project1RMarkdown.Rmd", 
-                  output_format = "github_document",
-                  output_dir = "./_posts",
-                  output_options = list(
-                    html_preview= FALSE
-                    )
-)
-```
-
 ## R Markdown
 
 This is an R Markdown document. Markdown is a simple formatting syntax
