@@ -31,6 +31,26 @@ library(TTR) #Used in the stock symbol lookup
 
 The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
 
+The lookups will require a companies stock symbol to be used. If you aren't sure what a specific companies stock symbol is, you can use this handy stock symbol lookup. Just pass in the name of the company you are interested, and the stock symbol will be returned.
+
+```{r}
+getSymbolByCompanyName<-function(CompanyName){
+ 
+  print("Running getSymbolByCompanyName function")
+  
+  #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
+ 
+  companyNameDF<-symbolsDF %>% filter(grepl(CompanyName,x=Name,ignore.case = TRUE))
+  return(companyNameDF)
+}  
+```
+
+```{r}
+getSymbolByCompanyName("Microsoft")
+```
 This program will allow for two separate API calls to retrieve financial information. The first option called "Daily" will give the stock readings for a specific stock ticker on a specific date. The second option is called "Aggregate" and will allow you to pull back the readings for a specific stock over a date range with different timespan and multipliers. We can get into more detail for this below.
 
 Daily Option
@@ -62,19 +82,8 @@ isValidSymbol <- function(symbolName){
 }
 ```
 
-```{r}
-getSymbolByCompanyName<-function(CompanyName)
-  
-  print("Running getSymbolByCompanyName function")
-  
-  if (exists('symbolsDF')==FALSE) {
-    symbolsDF <<- stockSymbols("NASDAQ")  
-  }
-  
-#To-Do- build a like lookup/filter here
-  #symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
-  
-```
+
+
 
 
 ```{r}
