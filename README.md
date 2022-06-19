@@ -1,7 +1,7 @@
 ST558 - Project 1
 ================
 Bryan Bittner
-2022-06-17
+2022-06-18
 
 # Financial Data Vignette
 
@@ -18,10 +18,11 @@ was created by Polygon.io and it is centered around financial data,
 specifically stock prices.
 
 Below is a list of packages that were used in the creation of this
-vignette. The tidyverse and knitr packages are commonly used r packages
-with a wide variety of uses. The httr and jsonlite packages will be used
-to call an API an display the results. The remaining packages are lesser
-known r packages to be used specifically for stock related functions.
+vignette. The tidyverse, knitr, and dplyr packages are commonly used r
+packages with a wide variety of uses. The httr and jsonlite packages
+will be used to call an API an display the results. The remaining
+packages are lesser known r packages to be used specifically for stock
+related functions.
 
 The advantage of using an API in code is that we can customize
 function(s) and have them automatically run and retrieve updated
@@ -47,11 +48,12 @@ isValidSymbol <- function(symbolName){
   print("Running isValidSymbol function")
   
   #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
-  #if (exists('symbolsDF')==FALSE && is.data.frame(get('symbolsDF'))){
-    symbolsDF <- stockSymbols("NASDAQ")  
-  #}
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
   
-  symbolsDFFiltered <- filter(symbolsDF, Symbol == toupper(symbolName))
+  #Make this a global DF so we can access the name later
+  symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
   
   if (count(symbolsDFFiltered) > 0){
     return(TRUE)
@@ -59,6 +61,19 @@ isValidSymbol <- function(symbolName){
   
   return(FALSE)
 }
+```
+
+``` r
+getSymbolByCompanyName<-function(CompanyName)
+  
+  print("Running getSymbolByCompanyName function")
+  
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
+  
+#To-Do- build a like lookup/filter here
+  #symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
 ```
 
 ``` r
@@ -76,6 +91,8 @@ isValidDate <- function(DateToCheck){
 
 ``` r
 stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
+  
+  print("Running stockDailyLookup function")
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -103,7 +120,7 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
   }
   
   if (printSummary==TRUE) {
-    #print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
+    print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
     print(paste("Lookup Date: ",lookupDate,sep=""))
     print(paste("Opening Price: $",apiDailyDataParsed$open,sep=""))
     print(paste("Closing Price: $",apiDailyDataParsed$close,sep=""))
@@ -119,11 +136,10 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
 dailyResults<-stockDailyLookup("AAPL","2022-06-01",TRUE)
 ```
 
+    ## [1] "Running stockDailyLookup function"
     ## [1] "Running isValidSymbol function"
-
-    ## Fetching NASDAQ symbols...
-
     ## [1] "Running isValidDate function"
+    ## [1] "Summary for 'AAPL - Apple Inc. - Common Stock'"
     ## [1] "Lookup Date: 2022-06-01"
     ## [1] "Opening Price: $149.9"
     ## [1] "Closing Price: $148.71"
@@ -146,6 +162,7 @@ The size of the time window - valid options
 ``` r
 isValidTimespan <- function(timespanToCheck){
   #Make sure the timespan is valid
+  print("Running isValidTimespan function")
   
   timespanToCheck<-tolower(timespanToCheck)
   
@@ -160,7 +177,9 @@ isValidTimespan <- function(timespanToCheck){
 ```
 
 ``` r
-stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE){
+stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE, returnResultsList=TRUE){
+  
+  print("Running stockAggregateLookup function")
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -187,7 +206,7 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
   
   apiAggData <-GET(apiLookup)
   apiAggDataParsed <- fromJSON(rawToChar(apiAggData$content))
-  print(max(apiAggDataParsed$results$h))
+  #print(max(apiAggDataParsed$results$h))
 
   if (apiAggDataParsed$status=="NOT_FOUND"){
     return(list("success"=FALSE,"resultsMessage"="Unknown error occurred. Date might be on a weekend or holiday"))
@@ -202,10 +221,11 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
   }
   
   #Convert results timestamp field to readable Date
-  apiAggDataParsed$results<-apiAggDataParsed$results %>% mutate(tDate = as.POSIXct(apiAggDataParsed$results$t/1000, origin="1970-01-01"))
+  apiAggDataParsed$results<-apiAggDataParsed$results %>% 
+    mutate(tDate = as.POSIXct(apiAggDataParsed$results$t/1000, origin="1970-01-01"))
   
   if (printSummary==TRUE) {
-    #print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
+    print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
     print(paste("Lookup Date From: ",lookupDateFrom,sep=""))
     print(paste("Lookup Date To: ",lookupDateTo,sep=""))
     print(paste("Number of records returned: ",apiAggDataParsed$resultsCount,sep=""))
@@ -217,46 +237,237 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
     print(paste("Date of Low: ",apiAggDataParsed$results$tDate[which.min(apiAggDataParsed$results$l)],sep=""))
   }
 
-  #return(list("success"=TRUE,"resultsMessage"="succes!",apiAggDataParsed))
+  if (returnResultsList==TRUE) {
+    parsedResults<-apiAggDataParsed$results %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+    #print(parsedResults)
+    return(parsedResults)
+  }
+  
 }
 ```
 
 ``` r
-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-01",lookupDateTo="2022-06-16",multiplier = 1,timespan="day",printSummary=TRUE)
+stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-05-30",lookupDateTo="2022-06-16",multiplier = 1,timespan="day",printSummary=TRUE,returnResultsList=FALSE)
 ```
 
+    ## [1] "Running stockAggregateLookup function"
     ## [1] "Running isValidSymbol function"
-
-    ## Fetching NASDAQ symbols...
-
     ## [1] "Running isValidDate function"
     ## [1] "Running isValidDate function"
-    ## [1] 151.74
-    ## [1] "Lookup Date From: 2022-06-01"
+    ## [1] "Running isValidTimespan function"
+    ## [1] "Summary for 'MSFT - Microsoft Corporation - Common Stock'"
+    ## [1] "Lookup Date From: 2022-05-30"
     ## [1] "Lookup Date To: 2022-06-16"
-    ## [1] "Number of records returned: 12"
-    ## [1] "Opening Price: $149.9"
-    ## [1] "Closing Price: $130.06"
-    ## [1] "Max Daily High: $151.74"
-    ## [1] "Min Daily Low: $129.04"
+    ## [1] "Number of records returned: 13"
+    ## [1] "Opening Price: $272.53"
+    ## [1] "Closing Price: $244.97"
+    ## [1] "Max Daily High: $277.69"
+    ## [1] "Min Daily Low: $241.51"
     ## [1] "Date of Max: 2022-05-31 23:00:00"
-    ## [1] "Date of Low: 2022-06-15 23:00:00"
+    ## [1] "Date of Low: 2022-06-13 23:00:00"
+
+# EDA
+
+Now lets use the Aggregate Lookup on and create some graphs and tables.
+
+Lets start with a 30 day lookup on Microsoft.
 
 ``` r
-#getSymbols("AAPL", src="yahoo")
-##TA=NULL to remove the trade volumn
-#chartSeries(AAPL, subset="last 1 months", theme=chartTheme("white"),TA=NULL)
+stockResults1<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-31,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 ```
 
-``` r
-#multiple_stocks <- tq_get(c("AMZN", "AAPL"),
-#                          get = "stock.prices",
-#                          from = "2022-06-01",
-#                          to = "2022-06-17")
-#multiple_stocks
-```
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+Here is a printout of some of the values returned from the lookup, as
+well as the readable date field called ‘tDate’.
 
 ``` r
-#ggplot(data = filter(multiple_stocks, symbol == "AAPL" || symbol == "AMZN"),
-#       aes(x=date, color=symbol)) + geom_line(aes(x=date, y=open, color=symbol))
+as_tibble(stockResults1)
 ```
+
+    ## # A tibble: 22 × 11
+    ##           v    vw     o     c     h     l             t      n tDate               Symbol Name                               
+    ##       <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>         <dbl>  <int> <dttm>              <chr>  <chr>                              
+    ##  1 31355985  256.  263   254.  264.  253. 1652846400000 414290 2022-05-17 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  2 32692286  254.  254.  253.  258.  252. 1652932800000 408722 2022-05-18 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  3 39164899  252.  257.  253.  259.  246. 1653019200000 518558 2022-05-19 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  4 33175379  259.  255.  261.  262.  253. 1653278400000 386147 2022-05-22 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  5 29043904  258.  258.  260.  261.  254. 1653364800000 357104 2022-05-23 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  6 28547947  261.  258.  263.  265.  257. 1653451200000 340324 2022-05-24 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  7 25002105  265.  262.  266.  267.  261. 1653537600000 297969 2022-05-25 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  8 26910824  272.  268.  273.  273.  268. 1653624000000 307860 2022-05-26 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ##  9 37827695  272.  273.  272.  275.  269. 1653969600000 363100 2022-05-30 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ## 10 25285874  273.  275.  272.  278.  270. 1654056000000 321548 2022-05-31 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ## # … with 12 more rows
+
+Let try a graph of the data
+
+``` r
+#stockResults1<-stockResults1 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults1)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
+```
+
+![](../images/unnamed-chunk-14-1.png)<!-- --> That is quite the drop
+between June 6th and June 15th. Let’s focus in on that window
+
+``` r
+stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+``` r
+#stockResults2<-stockResults2 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults2)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol)) 
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
+```
+
+![](../images/unnamed-chunk-15-1.png)<!-- -->
+
+I’m am by no means a financial wizard, but I think you can attribute the
+drop to the anticipation of the Federal Reserve raising interest rates
+on June 14th. Let see if we can find a similar effect on another stock.
+Lets give Amazon a shot.
+
+``` r
+stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+``` r
+#stockResults3<-stockResults3 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults3)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
+```
+
+![](../images/unnamed-chunk-16-1.png)<!-- -->
+
+It looks awfully similar to Microsoft. Just for fun, let’s do Apple.
+
+``` r
+stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+``` r
+data<-data.frame(stockResults4)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
+```
+
+![](../images/unnamed-chunk-17-1.png)<!-- --> I think it is safe to say
+there is a pattern going on here. Let’s plot all three at one and
+compare.
+
+Wait, we have the data for the three companies stored in three different
+data frames. Let’s see if we can join them together to make plotting
+easier.
+
+``` r
+stockResultsAll<-full_join(stockResults2,stockResults3)
+stockResultsAll<-full_join(stockResultsAll,stockResults4)
+stockResultsAll
+```
+
+    ##            v       vw       o      c        h      l            t       n               tDate Symbol
+    ## 1   22397042 270.0763 272.060 268.75 274.1800 267.22 1.654488e+12  260013 2022-06-05 23:00:00   MSFT
+    ## 2   22860677 270.6967 266.635 272.50 273.1300 265.94 1.654574e+12  247047 2022-06-06 23:00:00   MSFT
+    ## 3   17372341 271.1519 271.710 270.41 273.0000 269.61 1.654661e+12  234208 2022-06-07 23:00:00   MSFT
+    ## 4   26439728 268.0203 267.780 264.79 272.7081 264.63 1.654747e+12  301845 2022-06-08 23:00:00   MSFT
+    ## 5   31445841 254.9867 260.580 252.99 260.5800 252.53 1.654834e+12  459375 2022-06-09 23:00:00   MSFT
+    ## 6   45913188 244.2909 245.110 242.26 249.0242 241.53 1.655093e+12  587062 2022-06-12 23:00:00   MSFT
+    ## 7   28651487 243.7922 243.860 244.49 245.7400 241.51 1.655179e+12  370359 2022-06-13 23:00:00   MSFT
+    ## 8   33111729 250.6363 248.310 251.76 255.3000 246.42 1.655266e+12  410433 2022-06-14 23:00:00   MSFT
+    ## 9  135269024 125.9399 125.245 124.79 128.9900 123.81 1.654488e+12 1740186 2022-06-05 23:00:00   AMZN
+    ## 10  85156712 122.3120 122.005 123.00 124.1000 120.63 1.654574e+12  856013 2022-06-06 23:00:00   AMZN
+    ## 11  64926594 121.9755 122.610 121.18 123.7500 120.75 1.654661e+12  599425 2022-06-07 23:00:00   AMZN
+    ## 12  66997342 118.8313 119.990 116.15 121.3000 116.10 1.654747e+12  650556 2022-06-08 23:00:00   AMZN
+    ## 13  87390505 110.4847 113.415 109.65 114.5000 109.05 1.654834e+12  882204 2022-06-09 23:00:00   AMZN
+    ## 14  99277742 103.9449 104.190 103.67 106.5400 101.86 1.655093e+12  872871 2022-06-12 23:00:00   AMZN
+    ## 15  69728761 103.0364 104.190 102.31 104.8800 101.43 1.655179e+12  628765 2022-06-13 23:00:00   AMZN
+    ## 16  85011060 106.2456 103.860 107.67 109.0600 103.53 1.655266e+12  692699 2022-06-14 23:00:00   AMZN
+    ## 17  71598380 146.6167 147.030 146.14 148.5689 144.90 1.654488e+12  605199 2022-06-05 23:00:00   AAPL
+    ## 18  67808150 147.5529 144.345 148.71 149.0000 144.10 1.654574e+12  527360 2022-06-06 23:00:00   AAPL
+    ## 19  53950201 148.6118 148.580 147.96 149.8697 147.46 1.654661e+12  430174 2022-06-07 23:00:00   AAPL
+    ## 20  69472976 145.3266 147.080 142.64 147.9500 142.53 1.654747e+12  558178 2022-06-08 23:00:00   AAPL
+    ## 21  91566637 138.1785 140.280 137.13 140.7600 137.06 1.654834e+12  826197 2022-06-09 23:00:00   AAPL
+    ## 22 122128099 133.1280 132.870 131.88 135.2000 131.44 1.655093e+12 1019929 2022-06-12 23:00:00   AAPL
+    ## 23  84784326 132.5738 133.130 132.76 133.8900 131.48 1.655179e+12  674981 2022-06-13 23:00:00   AAPL
+    ## 24  91532972 134.6250 134.290 135.43 137.3400 132.16 1.655266e+12  733275 2022-06-14 23:00:00   AAPL
+    ##                                    Name
+    ## 1  Microsoft Corporation - Common Stock
+    ## 2  Microsoft Corporation - Common Stock
+    ## 3  Microsoft Corporation - Common Stock
+    ## 4  Microsoft Corporation - Common Stock
+    ## 5  Microsoft Corporation - Common Stock
+    ## 6  Microsoft Corporation - Common Stock
+    ## 7  Microsoft Corporation - Common Stock
+    ## 8  Microsoft Corporation - Common Stock
+    ## 9       Amazon.com, Inc. - Common Stock
+    ## 10      Amazon.com, Inc. - Common Stock
+    ## 11      Amazon.com, Inc. - Common Stock
+    ## 12      Amazon.com, Inc. - Common Stock
+    ## 13      Amazon.com, Inc. - Common Stock
+    ## 14      Amazon.com, Inc. - Common Stock
+    ## 15      Amazon.com, Inc. - Common Stock
+    ## 16      Amazon.com, Inc. - Common Stock
+    ## 17            Apple Inc. - Common Stock
+    ## 18            Apple Inc. - Common Stock
+    ## 19            Apple Inc. - Common Stock
+    ## 20            Apple Inc. - Common Stock
+    ## 21            Apple Inc. - Common Stock
+    ## 22            Apple Inc. - Common Stock
+    ## 23            Apple Inc. - Common Stock
+    ## 24            Apple Inc. - Common Stock
+
+That was easy. Now lets try and plot all three at once.
+
+``` r
+g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
+```
+
+![](../images/unnamed-chunk-19-1.png)<!-- -->
+
+That wasn’t quite as dramatic as I hopped. I think the Microsoft price
+is distorting the results a bit. Let’s try it again without Microsoft.
+
+``` r
+g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "AAPL" || Symbol == "AMZN"),
+  aes(x=tDate, color=Symbol)) 
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
+```
+
+![](../images/unnamed-chunk-20-1.png)<!-- -->

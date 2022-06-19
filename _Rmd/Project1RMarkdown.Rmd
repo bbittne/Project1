@@ -15,18 +15,22 @@ You might be asking yourself, what exactly is a vignette. Well let me save you t
 
 This vignette will be centered around a call to an API. The API I chose was created by Polygon.io and it is centered around financial data, specifically stock prices.
 
-Below is a list of packages that were used in the creation of this vignette. The tidyverse and knitr packages are commonly used r packages with a wide variety of uses. The httr and jsonlite packages will be used to call an API an display the results. The remaining packages are lesser known r packages to be used specifically for stock related functions.
+Below is a list of packages that were used in the creation of this vignette. The tidyverse, knitr, and dplyr packages are commonly used r packages with a wide variety of uses. The httr and jsonlite packages will be used to call an API an display the results. The remaining packages are lesser known r packages to be used specifically for stock related functions.
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,fig.path = "../images/")
+#knitr::opts_chunk$set(echo = TRUE,fig.path = "../images/")
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,fig.path = "../images/")
 
 library(tidyverse)
 library(knitr)
+library(dplyr)
 library(httr)
+library(ggplot2)
 library(jsonlite)
 library(TTR) #Used in the stock symbol lookup
-library(quantmod) #used for prebuilt stock market symbols and charts
-library(tidyquant) #Another package that is prebuilt for stock market lookups
+
+#library(quantmod) #used for prebuilt stock market symbols and charts
+#library(tidyquant) #Another package that is prebuilt for stock market lookups
 ```
 
 The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
@@ -47,11 +51,12 @@ isValidSymbol <- function(symbolName){
   print("Running isValidSymbol function")
   
   #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
-  #if (exists('symbolsDF')==FALSE && is.data.frame(get('symbolsDF'))){
-    symbolsDF <- stockSymbols("NASDAQ")  
-  #}
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
   
-  symbolsDFFiltered <- filter(symbolsDF, Symbol == toupper(symbolName))
+  #Make this a global DF so we can access the name later
+  symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
   
   if (count(symbolsDFFiltered) > 0){
     return(TRUE)
@@ -60,6 +65,21 @@ isValidSymbol <- function(symbolName){
   return(FALSE)
 }
 ```
+
+```{r}
+getSymbolByCompanyName<-function(CompanyName)
+  
+  print("Running getSymbolByCompanyName function")
+  
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
+  
+#To-Do- build a like lookup/filter here
+  #symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
+  
+```
+
 
 ```{r}
 isValidDate <- function(DateToCheck){
@@ -77,6 +97,8 @@ isValidDate <- function(DateToCheck){
 
 ```{r}
 stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
+  
+  print("Running stockDailyLookup function")
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -104,7 +126,7 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
   }
   
   if (printSummary==TRUE) {
-    #print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
+    print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
     print(paste("Lookup Date: ",lookupDate,sep=""))
     print(paste("Opening Price: $",apiDailyDataParsed$open,sep=""))
     print(paste("Closing Price: $",apiDailyDataParsed$close,sep=""))
@@ -136,6 +158,7 @@ timespan - The size of the time window - valid options ('minute','hour','day','w
 ```{r}
 isValidTimespan <- function(timespanToCheck){
   #Make sure the timespan is valid
+  print("Running isValidTimespan function")
   
   timespanToCheck<-tolower(timespanToCheck)
   
@@ -151,7 +174,9 @@ isValidTimespan <- function(timespanToCheck){
 
 
 ```{r}
-stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE){
+stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE, returnResultsList=TRUE){
+  
+  print("Running stockAggregateLookup function")
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -178,7 +203,7 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
   
   apiAggData <-GET(apiLookup)
   apiAggDataParsed <- fromJSON(rawToChar(apiAggData$content))
-  print(max(apiAggDataParsed$results$h))
+  #print(max(apiAggDataParsed$results$h))
 
   if (apiAggDataParsed$status=="NOT_FOUND"){
     return(list("success"=FALSE,"resultsMessage"="Unknown error occurred. Date might be on a weekend or holiday"))
@@ -193,10 +218,11 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
   }
   
   #Convert results timestamp field to readable Date
-  apiAggDataParsed$results<-apiAggDataParsed$results %>% mutate(tDate = as.POSIXct(apiAggDataParsed$results$t/1000, origin="1970-01-01"))
+  apiAggDataParsed$results<-apiAggDataParsed$results %>% 
+    mutate(tDate = as.POSIXct(apiAggDataParsed$results$t/1000, origin="1970-01-01"))
   
   if (printSummary==TRUE) {
-    #print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
+    print(paste("Summary for '",symbolName," - ",symbolsDFFiltered$Name, "'", sep=""))
     print(paste("Lookup Date From: ",lookupDateFrom,sep=""))
     print(paste("Lookup Date To: ",lookupDateTo,sep=""))
     print(paste("Number of records returned: ",apiAggDataParsed$resultsCount,sep=""))
@@ -208,33 +234,105 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
     print(paste("Date of Low: ",apiAggDataParsed$results$tDate[which.min(apiAggDataParsed$results$l)],sep=""))
   }
 
-  #return(list("success"=TRUE,"resultsMessage"="succes!",apiAggDataParsed))
+  if (returnResultsList==TRUE) {
+    parsedResults<-apiAggDataParsed$results %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+    #print(parsedResults)
+    return(parsedResults)
+  }
+  
 }
 ```
 
 
 ```{r}
-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-01",lookupDateTo="2022-06-16",multiplier = 1,timespan="day",printSummary=TRUE)
+stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-05-30",lookupDateTo="2022-06-16",multiplier = 1,timespan="day",printSummary=TRUE,returnResultsList=FALSE)
 ```
 
+
+# EDA
+
+Now lets use the Aggregate Lookup on and create some graphs and tables.
+
+Lets start with a 30 day lookup on Microsoft.
 
 ```{r}
-#getSymbols("AAPL", src="yahoo")
-##TA=NULL to remove the trade volumn
-#chartSeries(AAPL, subset="last 1 months", theme=chartTheme("white"),TA=NULL)
+stockResults1<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-31,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 ```
+Here is a printout of some of the values returned from the lookup, as well as the readable date field called 'tDate'.
+```{r}
+as_tibble(stockResults1)
+```
+
+
+Let try a graph of the data
 
 ```{r}
-#multiple_stocks <- tq_get(c("AMZN", "AAPL"),
-#                          get = "stock.prices",
-#                          from = "2022-06-01",
-#                          to = "2022-06-17")
-#multiple_stocks
+#stockResults1<-stockResults1 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults1)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
+That is quite the drop between June 6th and June 15th. Let's focus in on that window
 
 ```{r}
-#ggplot(data = filter(multiple_stocks, symbol == "AAPL" || symbol == "AMZN"),
-#       aes(x=date, color=symbol)) + geom_line(aes(x=date, y=open, color=symbol))
+stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+
+#stockResults2<-stockResults2 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults2)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol)) 
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
 
+I'm am by no means a financial wizard, but I think you can attribute the drop to the anticipation of the Federal Reserve raising interest rates on June 14th. Let see if we can find a similar effect on another stock. Lets give Amazon a shot.
 
+```{r}
+stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+
+#stockResults3<-stockResults3 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
+data<-data.frame(stockResults3)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
+```
+
+It looks awfully similar to Microsoft. Just for fun, let's do Apple.
+
+```{r}
+stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+
+data<-data.frame(stockResults4)
+
+g<-ggplot(data,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
+```
+I think it is safe to say there is a pattern going on here. Let's plot all three at one and compare.
+
+Wait, we have the data for the three companies stored in three different data frames. Let's see if we can join them together to make plotting easier.
+
+```{r}
+stockResultsAll<-full_join(stockResults2,stockResults3)
+stockResultsAll<-full_join(stockResultsAll,stockResults4)
+stockResultsAll
+```
+That was easy. Now lets try and plot all three at once.
+
+```{r}
+g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
+```
+
+That wasn't quite as dramatic as I hopped. I think the Microsoft price is distorting the results a bit. Let's try it again without Microsoft.
+
+```{r}
+g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "AAPL" || Symbol == "AMZN"),
+  aes(x=tDate, color=Symbol)) 
+  g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
+  labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
+```
