@@ -328,11 +328,60 @@ Lets dig a bit deeper and compare the three companies and their closing prices. 
 
 ```{r}
 stockResultsAll %>% group_by(Symbol) %>%
-summarise(avg = mean(c), med = median(c), var = var(c))
+summarise(avg = mean(c), med = median(c), var = var(c), min=min(c), max=max(c))
 ```
 Another thing to look at is the trade volume. Below you can see that Apple and Amazon were far more active in terms of trade value than Microsoft. This might have prevented the two stocks from dropping as much as Microsoft did.
 
 ```{r}
 stockResultsAll %>% group_by(Symbol) %>%
-summarise(avg = mean(v), med = median(v), var = var(v))
+summarise(avg = mean(v), med = median(v), var = var(v), min=min(v), max=max(v))
+```
+Tables are net, but lets get back to plotting. Here is the same volume information, but in box plot form. Looking at the wisker size, you can see that Apple had more extreme amounts of volume where-as the volume for Microsoft and Amazon was largely consistent. Interesting though that Microsoft and Amazon are showing a couple outliers with Amazon having what appears to be and extremely high volume outlier.
+
+```{r}
+g <- ggplot(stockResultsAll, aes(x = Symbol, y = v))
+g + geom_boxplot(fill = "grey") + coord_flip() +
+  labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
+```
+Let's try a scatterplot to see if we can figure out when that extremly high trade volume for Amazon occurred. Interesting enough, it looks like the high volume occurred before the fed rate hike. All stocks had a noticable gain in volume the day before the rate hike. This is further evidence that traders were expecting the price to take a hit and likely sold before the stock hit bottom.
+```{r}
+g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
+  g + geom_point(size=3, shape=10) +
+  labs(x="Date", y="Volume", title="Stock Volume Analysis")
+```
+A scatter plot might not be the best view given the data. Let's try a side-by-side bar chart instead.
+```{r}
+sumData <- stockResultsAll %>% group_by(Symbol,tDate) 
+  g2 <- ggplot(sumData, aes(x = tDate, y = v))
+  #position=dodge for side-by-side plots
+  g2 + geom_bar(aes(fill = as.factor(Symbol)), stat = "identity", position="dodge") +
+    labs(x="Volume", y="Volume", title="Stock Volume Analysis") +
+    scale_fill_discrete(name = "Symbol")
+```
+
+Lets see if we can spot a long term trend pricing average. Start with a histogram of Microsoft's closing price over the last 30 days. It's hard to spot a clear average here. Let's get some additional observations.
+
+```{r}
+g<-ggplot(data=stockResults1,aes(x=c))
+  g + geom_histogram(bins=10, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
+```
+Here we are graphing the results from the last 120 days. It looks like the closing average is starting to center around the $280 price point. Lets try one more with additional observations.
+```{r}
+stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-120,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+
+g<-ggplot(data=stockResults5,aes(x=c))
+  g + geom_histogram(bins=30, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 120 Days")
+
+```
+
+Here we are graphing the results from the last 365 days. The closing average is definitely centered around the $280 price point. Looks like now (06/19/2022) would be a good time to buy some stock!
+```{r}
+stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+
+g<-ggplot(data=stockResults5,aes(x=c))
+  g + geom_histogram(bins=30, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 365 Days")
+
 ```

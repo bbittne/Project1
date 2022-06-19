@@ -1,7 +1,7 @@
 ST558 - Project 1
 ================
 Bryan Bittner
-2022-06-18
+2022-06-19
 
 # Financial Data Vignette
 
@@ -289,20 +289,20 @@ well as the readable date field called ‘tDate’.
 as_tibble(stockResults1)
 ```
 
-    ## # A tibble: 22 × 11
+    ## # A tibble: 21 × 11
     ##           v    vw     o     c     h     l           t      n tDate              
     ##       <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>       <dbl>  <int> <dttm>             
-    ##  1 31355985  256.  263   254.  264.  253.     1.65e12 414290 2022-05-17 23:00:00
-    ##  2 32692286  254.  254.  253.  258.  252.     1.65e12 408722 2022-05-18 23:00:00
-    ##  3 39164899  252.  257.  253.  259.  246.     1.65e12 518558 2022-05-19 23:00:00
-    ##  4 33175379  259.  255.  261.  262.  253.     1.65e12 386147 2022-05-22 23:00:00
-    ##  5 29043904  258.  258.  260.  261.  254.     1.65e12 357104 2022-05-23 23:00:00
-    ##  6 28547947  261.  258.  263.  265.  257.     1.65e12 340324 2022-05-24 23:00:00
-    ##  7 25002105  265.  262.  266.  267.  261.     1.65e12 297969 2022-05-25 23:00:00
-    ##  8 26910824  272.  268.  273.  273.  268.     1.65e12 307860 2022-05-26 23:00:00
-    ##  9 37827695  272.  273.  272.  275.  269.     1.65e12 363100 2022-05-30 23:00:00
-    ## 10 25285874  273.  275.  272.  278.  270.     1.65e12 321548 2022-05-31 23:00:00
-    ## # … with 12 more rows, and 2 more variables: Symbol <chr>, Name <chr>
+    ##  1 32692286  254.  254.  253.  258.  252.     1.65e12 408722 2022-05-18 23:00:00
+    ##  2 39164899  252.  257.  253.  259.  246.     1.65e12 518558 2022-05-19 23:00:00
+    ##  3 33175379  259.  255.  261.  262.  253.     1.65e12 386147 2022-05-22 23:00:00
+    ##  4 29043904  258.  258.  260.  261.  254.     1.65e12 357104 2022-05-23 23:00:00
+    ##  5 28547947  261.  258.  263.  265.  257.     1.65e12 340324 2022-05-24 23:00:00
+    ##  6 25002105  265.  262.  266.  267.  261.     1.65e12 297969 2022-05-25 23:00:00
+    ##  7 26910824  272.  268.  273.  273.  268.     1.65e12 307860 2022-05-26 23:00:00
+    ##  8 37827695  272.  273.  272.  275.  269.     1.65e12 363100 2022-05-30 23:00:00
+    ##  9 25285874  273.  275.  272.  278.  270.     1.65e12 321548 2022-05-31 23:00:00
+    ## 10 44008205  269.  264.  275.  275.  262.     1.65e12 532530 2022-06-01 23:00:00
+    ## # … with 11 more rows, and 2 more variables: Symbol <chr>, Name <chr>
 
 Let try a graph of the data
 
@@ -471,15 +471,15 @@ most impacted by the rate hike.
 
 ``` r
 stockResultsAll %>% group_by(Symbol) %>%
-summarise(avg = mean(c), med = median(c), var = var(c))
+summarise(avg = mean(c), med = median(c), var = var(c), min=min(c), max=max(c))
 ```
 
-    ## # A tibble: 3 × 4
-    ##   Symbol   avg   med   var
-    ##   <chr>  <dbl> <dbl> <dbl>
-    ## 1 AAPL    140.  140.  47.2
-    ## 2 AMZN    114.  113.  79.2
-    ## 3 MSFT    258.  259. 145.
+    ## # A tibble: 3 × 6
+    ##   Symbol   avg   med   var   min   max
+    ##   <chr>  <dbl> <dbl> <dbl> <dbl> <dbl>
+    ## 1 AAPL    140.  140.  47.2  132.  149.
+    ## 2 AMZN    114.  113.  79.2  102.  125.
+    ## 3 MSFT    258.  259. 145.   242.  272.
 
 Another thing to look at is the trade volume. Below you can see that
 Apple and Amazon were far more active in terms of trade value than
@@ -488,12 +488,109 @@ much as Microsoft did.
 
 ``` r
 stockResultsAll %>% group_by(Symbol) %>%
-summarise(avg = mean(v), med = median(v), var = var(v))
+summarise(avg = mean(v), med = median(v), var = var(v), min=min(v), max=max(v))
 ```
 
-    ## # A tibble: 3 × 4
-    ##   Symbol       avg       med     var
-    ##   <chr>      <dbl>     <dbl>   <dbl>
-    ## 1 AAPL   81605218. 78191353  4.36e14
-    ## 2 AMZN   86719718. 85083886  5.25e14
-    ## 3 MSFT   28524004. 27545608. 7.58e13
+    ## # A tibble: 3 × 6
+    ##   Symbol       avg       med     var      min       max
+    ##   <chr>      <dbl>     <dbl>   <dbl>    <dbl>     <dbl>
+    ## 1 AAPL   81605218. 78191353  4.36e14 53950201 122128099
+    ## 2 AMZN   86719718. 85083886  5.25e14 64926594 135269024
+    ## 3 MSFT   28524004. 27545608. 7.58e13 17372341  45913188
+
+Tables are net, but lets get back to plotting. Here is the same volume
+information, but in box plot form. Looking at the wisker size, you can
+see that Apple had more extreme amounts of volume where-as the volume
+for Microsoft and Amazon was largely consistent. Interesting though that
+Microsoft and Amazon are showing a couple outliers with Amazon having
+what appears to be and extremely high volume outlier.
+
+``` r
+g <- ggplot(stockResultsAll, aes(x = Symbol, y = v))
+g + geom_boxplot(fill = "grey") + coord_flip() +
+  labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
+```
+
+![](../images/unnamed-chunk-21-1.png)<!-- --> Let’s try a scatterplot to
+see if we can figure out when that extremly high trade volume for Amazon
+occurred. Interesting enough, it looks like the high volume occurred
+before the fed rate hike. All stocks had a noticable gain in volume the
+day before the rate hike. This is further evidence that traders were
+expecting the price to take a hit and likely sold before the stock hit
+bottom.
+
+``` r
+g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
+  g + geom_point(size=3, shape=10) +
+  labs(x="Date", y="Volume", title="Stock Volume Analysis")
+```
+
+![](../images/unnamed-chunk-22-1.png)<!-- --> A scatter plot might not
+be the best view given the data. Let’s try a side-by-side bar chart
+instead.
+
+``` r
+sumData <- stockResultsAll %>% group_by(Symbol,tDate) 
+  g2 <- ggplot(sumData, aes(x = tDate, y = v))
+  #position=dodge for side-by-side plots
+  g2 + geom_bar(aes(fill = as.factor(Symbol)), stat = "identity", position="dodge") +
+    labs(x="Volume", y="Volume", title="Stock Volume Analysis") +
+    scale_fill_discrete(name = "Symbol")
+```
+
+![](../images/unnamed-chunk-23-1.png)<!-- -->
+
+Lets see if we can spot a long term trend pricing average. Start with a
+histogram of Microsoft’s closing price over the last 30 days. It’s hard
+to spot a clear average here. Let’s get some additional observations.
+
+``` r
+g<-ggplot(data=stockResults1,aes(x=c))
+  g + geom_histogram(bins=10, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
+```
+
+![](../images/unnamed-chunk-24-1.png)<!-- --> Here we are graphing the
+results from the last 120 days. It looks like the closing average is
+starting to center around the $280 price point. Lets try one more with
+additional observations.
+
+``` r
+stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-120,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+``` r
+g<-ggplot(data=stockResults5,aes(x=c))
+  g + geom_histogram(bins=30, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 120 Days")
+```
+
+![](../images/unnamed-chunk-25-1.png)<!-- -->
+
+Here we are graphing the results from the last 365 days. The closing
+average is definitely centered around the $280 price point. Lets try one
+more with additional observations.
+
+``` r
+stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+
+    ## [1] "Running stockAggregateLookup function"
+    ## [1] "Running isValidSymbol function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidDate function"
+    ## [1] "Running isValidTimespan function"
+
+``` r
+g<-ggplot(data=stockResults5,aes(x=c))
+  g + geom_histogram(bins=30, fill="blue") +
+  labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 365 Days")
+```
+
+![](../images/unnamed-chunk-26-1.png)<!-- -->
