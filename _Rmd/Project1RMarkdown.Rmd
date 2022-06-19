@@ -18,7 +18,6 @@ This vignette will be centered around a call to an API. The API I chose was crea
 Below is a list of packages that were used in the creation of this vignette. The tidyverse, knitr, and dplyr packages are commonly used r packages with a wide variety of uses. The httr and jsonlite packages will be used to call an API an display the results. The remaining packages are lesser known r packages to be used specifically for stock related functions.
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE,fig.path = "../images/")
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,fig.path = "../images/")
 
 library(tidyverse)
@@ -28,9 +27,6 @@ library(httr)
 library(ggplot2)
 library(jsonlite)
 library(TTR) #Used in the stock symbol lookup
-
-#library(quantmod) #used for prebuilt stock market symbols and charts
-#library(tidyquant) #Another package that is prebuilt for stock market lookups
 ```
 
 The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
@@ -267,10 +263,7 @@ as_tibble(stockResults1)
 Let try a graph of the data
 
 ```{r}
-#stockResults1<-stockResults1 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults1)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
@@ -279,10 +272,7 @@ That is quite the drop between June 6th and June 15th. Let's focus in on that wi
 ```{r}
 stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 
-#stockResults2<-stockResults2 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults2)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol)) 
+g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol)) 
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
@@ -292,10 +282,7 @@ I'm am by no means a financial wizard, but I think you can attribute the drop to
 ```{r}
 stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 
-#stockResults3<-stockResults3 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults3)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
@@ -305,9 +292,7 @@ It looks awfully similar to Microsoft. Just for fun, let's do Apple.
 ```{r}
 stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 
-data<-data.frame(stockResults4)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
@@ -335,4 +320,19 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   aes(x=tDate, color=Symbol)) 
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
+```
+
+Contingency Tables!
+
+Lets dig a bit deeper and compare the three companies and their closing prices. If we build a table grouped by stock symbol, we can see the summary stats for each company. Looking at the output below, you can see that Microsoft had by far the largest variance. Meaning they were likely most impacted by the rate hike.
+
+```{r}
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(c), med = median(c), var = var(c))
+```
+Another thing to look at is the trade volume. Below you can see that Apple and Amazon were far more active in terms of trade value than Microsoft. This might have prevented the two stocks from dropping as much as Microsoft did.
+
+```{r}
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(v), med = median(v), var = var(v))
 ```

@@ -307,10 +307,7 @@ as_tibble(stockResults1)
 Let try a graph of the data
 
 ``` r
-#stockResults1<-stockResults1 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults1)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
@@ -329,10 +326,7 @@ stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-#stockResults2<-stockResults2 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults2)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol)) 
+g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol)) 
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
@@ -355,10 +349,7 @@ stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-#stockResults3<-stockResults3 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults3)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
@@ -378,9 +369,7 @@ stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-data<-data.frame(stockResults4)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
@@ -471,3 +460,40 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
 ```
 
 ![](../images/unnamed-chunk-18-1.png)<!-- -->
+
+Contingency Tables!
+
+Lets dig a bit deeper and compare the three companies and their closing
+prices. If we build a table grouped by stock symbol, we can see the
+summary stats for each company. Looking at the output below, you can see
+that Microsoft had by far the largest variance. Meaning they were likely
+most impacted by the rate hike.
+
+``` r
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(c), med = median(c), var = var(c))
+```
+
+    ## # A tibble: 3 × 4
+    ##   Symbol   avg   med   var
+    ##   <chr>  <dbl> <dbl> <dbl>
+    ## 1 AAPL    140.  140.  47.2
+    ## 2 AMZN    114.  113.  79.2
+    ## 3 MSFT    258.  259. 145.
+
+Another thing to look at is the trade volume. Below you can see that
+Apple and Amazon were far more active in terms of trade value than
+Microsoft. This might have prevented the two stocks from dropping as
+much as Microsoft did.
+
+``` r
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(v), med = median(v), var = var(v))
+```
+
+    ## # A tibble: 3 × 4
+    ##   Symbol       avg       med     var
+    ##   <chr>      <dbl>     <dbl>   <dbl>
+    ## 1 AAPL   81605218. 78191353  4.36e14
+    ## 2 AMZN   86719718. 85083886  5.25e14
+    ## 3 MSFT   28524004. 27545608. 7.58e13

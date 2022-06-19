@@ -307,15 +307,12 @@ as_tibble(stockResults1)
 Let try a graph of the data
 
 ``` r
-#stockResults1<-stockResults1 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults1)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
 
-![](../images/unnamed-chunk-14-1.png)<!-- --> That is quite the drop
+![](../images/unnamed-chunk-95-1.png)<!-- --> That is quite the drop
 between June 6th and June 15th. Let’s focus in on that window
 
 ``` r
@@ -329,15 +326,12 @@ stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-#stockResults2<-stockResults2 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults2)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol)) 
+g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol)) 
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
 
-![](../images/unnamed-chunk-15-1.png)<!-- -->
+![](../images/unnamed-chunk-96-1.png)<!-- -->
 
 I’m am by no means a financial wizard, but I think you can attribute the
 drop to the anticipation of the Federal Reserve raising interest rates
@@ -355,15 +349,12 @@ stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-#stockResults3<-stockResults3 %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-data<-data.frame(stockResults3)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
 
-![](../images/unnamed-chunk-16-1.png)<!-- -->
+![](../images/unnamed-chunk-97-1.png)<!-- -->
 
 It looks awfully similar to Microsoft. Just for fun, let’s do Apple.
 
@@ -378,14 +369,12 @@ stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06
     ## [1] "Running isValidTimespan function"
 
 ``` r
-data<-data.frame(stockResults4)
-
-g<-ggplot(data,aes(x=tDate, color=Symbol))
+g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
 
-![](../images/unnamed-chunk-17-1.png)<!-- --> I think it is safe to say
+![](../images/unnamed-chunk-98-1.png)<!-- --> I think it is safe to say
 there is a pattern going on here. Let’s plot all three at one and
 compare.
 
@@ -458,7 +447,7 @@ g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-19-1.png)<!-- -->
+![](../images/unnamed-chunk-100-1.png)<!-- -->
 
 That wasn’t quite as dramatic as I hopped. I think the Microsoft price
 is distorting the results a bit. Let’s try it again without Microsoft.
@@ -470,4 +459,41 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-20-1.png)<!-- -->
+![](../images/unnamed-chunk-101-1.png)<!-- -->
+
+Contingency Tables!
+
+Lets dig a bit deeper and compare the three companies and their closing
+prices. If we build a table grouped by stock symbol, we can see the
+summary stats for each company. Looking at the output below, you can see
+that Microsoft had by far the largest variance. Meaning they were likely
+most impacted by the rate hike.
+
+``` r
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(c), med = median(c), var = var(c))
+```
+
+    ## # A tibble: 3 × 4
+    ##   Symbol   avg   med   var
+    ##   <chr>  <dbl> <dbl> <dbl>
+    ## 1 AAPL    140.  140.  47.2
+    ## 2 AMZN    114.  113.  79.2
+    ## 3 MSFT    258.  259. 145.
+
+Another thing to look at is the trade volume. Below you can see that
+Apple and Amazon were far more active in terms of trade value than
+Microsoft. This might have prevented the two stocks from dropping as
+much as Microsoft did.
+
+``` r
+stockResultsAll %>% group_by(Symbol) %>%
+summarise(avg = mean(v), med = median(v), var = var(v))
+```
+
+    ## # A tibble: 3 × 4
+    ##   Symbol       avg       med     var
+    ##   <chr>      <dbl>     <dbl>   <dbl>
+    ## 1 AAPL   81605218. 78191353  4.36e14
+    ## 2 AMZN   86719718. 85083886  5.25e14
+    ## 3 MSFT   28524004. 27545608. 7.58e13
