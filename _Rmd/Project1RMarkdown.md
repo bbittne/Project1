@@ -1,7 +1,7 @@
 ST558 - Project 1
 ================
 Bryan Bittner
-2022-06-19
+2022-06-21
 
 # Financial Data Vignette
 
@@ -15,19 +15,63 @@ informative guide for how to use and deploy a lookup on financial data.
 
 This vignette will be centered around a call to an API. The API I chose
 was created by Polygon.io and it is centered around financial data,
-specifically stock prices.
+specifically stock prices. The advantage of using an API in code is that
+we can customize function(s) and have them automatically run and
+retrieve updated results. This beats manually going out to a website to
+check the stock ticker.
 
 Below is a list of packages that were used in the creation of this
-vignette. The tidyverse, knitr, and dplyr packages are commonly used r
-packages with a wide variety of uses. The httr and jsonlite packages
-will be used to call an API an display the results. The remaining
-packages are lesser known r packages to be used specifically for stock
+vignette. The tidyverse package is a collection of commonly used
+packages. The knitr package is used to knit the document. The httr and
+jsonlite packages will be used to call an API an display the results.
+The TTR package is lesser known r package used specifically for stock
 related functions.
 
-The advantage of using an API in code is that we can customize
-function(s) and have them automatically run and retrieve updated
-results. This beats manually going out to a website to check the stock
-ticker.
+-   tidyverse
+-   knitr
+-   httr
+-   jsonlite
+-   TTR
+
+In addition to the pre-built r packages, there are also a number of
+functions that were created specifically for this vinette. Here is a
+list of the functions and a brief description of what they do:
+
+-   getSymbolByCompanyName() - Pass in the company name and returns its
+    stocks symbol
+-   isValidSymbol() - Pass in a stock symbol to make sure it is a valid
+    symbol
+-   isValidDate() - Pass in a date to make sure it is in the correct
+    date format
+-   stockDailyLookup() - Used to get the daily open, close and other
+    related info for a specific day
+-   stockAggregateLookup() - Used to get Aggregated Stock information
+    with a number of different options
+-   isValidTimespan() - Makes sure the timespan option used in the
+    Aggregate Lookup is valid
+
+The lookups will require a companies stock symbol to be used. If you
+aren’t sure what a specific companies stock symbol is, you can use this
+handy stock symbol lookup. Just pass in the name of the company you are
+interested, and the stock symbol will be returned.
+
+``` r
+getSymbolByCompanyName<-function(CompanyName){
+  #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
+  if (exists('symbolsDF')==FALSE) {
+    symbolsDF <<- stockSymbols("NASDAQ")  
+  }
+ 
+  companyNameDF<-symbolsDF %>% filter(grepl(CompanyName,x=Name,ignore.case = TRUE))
+  return(companyNameDF$Name)
+}  
+```
+
+``` r
+getSymbolByCompanyName("Microsoft")
+```
+
+    ## [1] "Microsoft Corporation - Common Stock"
 
 This program will allow for two separate API calls to retrieve financial
 information. The first option called “Daily” will give the stock
@@ -45,7 +89,6 @@ the following values will be returned: open, high, low, close, volume
 ``` r
 isValidSymbol <- function(symbolName){
   #Checks to make sure the stock ticker name is value
-  print("Running isValidSymbol function")
   
   #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
   if (exists('symbolsDF')==FALSE) {
@@ -64,23 +107,9 @@ isValidSymbol <- function(symbolName){
 ```
 
 ``` r
-getSymbolByCompanyName<-function(CompanyName)
-  
-  print("Running getSymbolByCompanyName function")
-  
-  if (exists('symbolsDF')==FALSE) {
-    symbolsDF <<- stockSymbols("NASDAQ")  
-  }
-  
-#To-Do- build a like lookup/filter here
-  #symbolsDFFiltered <<- filter(symbolsDF, Symbol == toupper(symbolName))
-```
-
-``` r
 isValidDate <- function(DateToCheck){
   #Dates in these API lookup must be a valid date and in the YYYY-MM-DD format
   
-  print("Running isValidDate function")
   d <- try(as.Date(DateToCheck, format="%Y-%m-%d"))
   if("try-error" %in% class(d) || is.na(d)) {
     return(FALSE)
@@ -91,8 +120,7 @@ isValidDate <- function(DateToCheck){
 
 ``` r
 stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
-  
-  print("Running stockDailyLookup function")
+  #Calls the daily stock API
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -109,7 +137,6 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
   
   apiDailyData <-GET(apiLookup)
   apiDailyDataParsed <- fromJSON(rawToChar(apiDailyData$content))
-  #print(apiDailyDataParsed)
 
   if (apiDailyDataParsed$status=="NOT_FOUND"){
     return(list("success"=FALSE,"resultsMessage"="Unknown error occurred. Date might be on a weekend or holiday"))
@@ -136,9 +163,6 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
 dailyResults<-stockDailyLookup("AAPL","2022-06-01",TRUE)
 ```
 
-    ## [1] "Running stockDailyLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
     ## [1] "Summary for 'AAPL - Apple Inc. - Common Stock'"
     ## [1] "Lookup Date: 2022-06-01"
     ## [1] "Opening Price: $149.9"
@@ -152,17 +176,20 @@ some history to see if the stock has been going up or down. For that we
 will need another API. Enter the ‘Aggregate’ API lookup.
 
 This has some additional parameters that will need to be defined and
-validated StockTicker - The ticker symbol of the stock/equity.
-DateFrom - The start of the aggregate time window with the format
-YYYY-MM-DD DateTo - The end of the aggregate time window with the format
-YYYY-MM-DD Multiplier - The size of the timespan multiplier. timespan -
-The size of the time window - valid options
-(‘minute’,‘hour’,‘day’,‘week’,‘month’,‘quarter’,‘year’)
+validated:
+
+-   StockTicker - The ticker symbol of the stock/equity.
+-   DateFrom - The start of the aggregate time window with the format
+    YYYY-MM-DD
+-   DateTo - The end of the aggregate time window with the format
+    YYYY-MM-DD
+-   Multiplier - The size of the timespan multiplier.
+-   timespan - The size of the time window - valid options
+    (‘minute’,‘hour’,‘day’,‘week’,‘month’,‘quarter’,‘year’)
 
 ``` r
 isValidTimespan <- function(timespanToCheck){
   #Make sure the timespan is valid
-  print("Running isValidTimespan function")
   
   timespanToCheck<-tolower(timespanToCheck)
   
@@ -178,9 +205,7 @@ isValidTimespan <- function(timespanToCheck){
 
 ``` r
 stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE, returnResultsList=TRUE){
-  
-  print("Running stockAggregateLookup function")
-  
+
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
     return(list("success"=FALSE,"resultsMessage"="Symbol not found"))
@@ -250,11 +275,6 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
 stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-05-30",lookupDateTo="2022-06-16",multiplier = 1,timespan="day",printSummary=TRUE,returnResultsList=FALSE)
 ```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
     ## [1] "Summary for 'MSFT - Microsoft Corporation - Common Stock'"
     ## [1] "Lookup Date From: 2022-05-30"
     ## [1] "Lookup Date To: 2022-06-16"
@@ -276,12 +296,6 @@ Lets start with a 30 day lookup on Microsoft.
 stockResults1<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-31,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 ```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
 Here is a printout of some of the values returned from the lookup, as
 well as the readable date field called ‘tDate’.
 
@@ -289,20 +303,29 @@ well as the readable date field called ‘tDate’.
 as_tibble(stockResults1)
 ```
 
-    ## # A tibble: 21 × 11
+    ## # A tibble: 19 × 11
     ##           v    vw     o     c     h     l           t      n tDate              
     ##       <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>       <dbl>  <int> <dttm>             
-    ##  1 32692286  254.  254.  253.  258.  252.     1.65e12 408722 2022-05-18 23:00:00
-    ##  2 39164899  252.  257.  253.  259.  246.     1.65e12 518558 2022-05-19 23:00:00
-    ##  3 33175379  259.  255.  261.  262.  253.     1.65e12 386147 2022-05-22 23:00:00
-    ##  4 29043904  258.  258.  260.  261.  254.     1.65e12 357104 2022-05-23 23:00:00
-    ##  5 28547947  261.  258.  263.  265.  257.     1.65e12 340324 2022-05-24 23:00:00
-    ##  6 25002105  265.  262.  266.  267.  261.     1.65e12 297969 2022-05-25 23:00:00
-    ##  7 26910824  272.  268.  273.  273.  268.     1.65e12 307860 2022-05-26 23:00:00
-    ##  8 37827695  272.  273.  272.  275.  269.     1.65e12 363100 2022-05-30 23:00:00
-    ##  9 25285874  273.  275.  272.  278.  270.     1.65e12 321548 2022-05-31 23:00:00
-    ## 10 44008205  269.  264.  275.  275.  262.     1.65e12 532530 2022-06-01 23:00:00
-    ## # … with 11 more rows, and 2 more variables: Symbol <chr>, Name <chr>
+    ##  1 33175379  259.  255.  261.  262.  253.     1.65e12 386147 2022-05-22 23:00:00
+    ##  2 29043904  258.  258.  260.  261.  254.     1.65e12 357104 2022-05-23 23:00:00
+    ##  3 28547947  261.  258.  263.  265.  257.     1.65e12 340324 2022-05-24 23:00:00
+    ##  4 25002105  265.  262.  266.  267.  261.     1.65e12 297969 2022-05-25 23:00:00
+    ##  5 26910824  272.  268.  273.  273.  268.     1.65e12 307860 2022-05-26 23:00:00
+    ##  6 37827695  272.  273.  272.  275.  269.     1.65e12 363100 2022-05-30 23:00:00
+    ##  7 25285874  273.  275.  272.  278.  270.     1.65e12 321548 2022-05-31 23:00:00
+    ##  8 44008205  269.  264.  275.  275.  262.     1.65e12 532530 2022-06-01 23:00:00
+    ##  9 28058958  270.  270.  270.  273.  268.     1.65e12 303810 2022-06-02 23:00:00
+    ## 10 22397042  270.  272.  269.  274.  267.     1.65e12 260013 2022-06-05 23:00:00
+    ## 11 22860677  271.  267.  272.  273.  266.     1.65e12 247047 2022-06-06 23:00:00
+    ## 12 17372341  271.  272.  270.  273   270.     1.65e12 234208 2022-06-07 23:00:00
+    ## 13 26439728  268.  268.  265.  273.  265.     1.65e12 301845 2022-06-08 23:00:00
+    ## 14 31445841  255.  261.  253.  261.  253.     1.65e12 459375 2022-06-09 23:00:00
+    ## 15 45913188  244.  245.  242.  249.  242.     1.66e12 587062 2022-06-12 23:00:00
+    ## 16 28651487  244.  244.  244.  246.  242.     1.66e12 370359 2022-06-13 23:00:00
+    ## 17 33111729  251.  248.  252.  255.  246.     1.66e12 410433 2022-06-14 23:00:00
+    ## 18 33169160  245.  246.  245.  247.  243.     1.66e12 437473 2022-06-15 23:00:00
+    ## 19 43081680  247.  245.  248.  250.  244.     1.66e12 426273 2022-06-16 23:00:00
+    ## # … with 2 more variables: Symbol <chr>, Name <chr>
 
 Let try a graph of the data
 
@@ -312,26 +335,20 @@ g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
 
-![](../images/unnamed-chunk-12-1.png)<!-- --> That is quite the drop
-between June 6th and June 15th. Let’s focus in on that window
+![](../images/unnamed-chunk-13-1.png)<!-- -->
+
+That is quite the drop between June 6th and June 15th. Let’s focus in on
+that window
 
 ``` r
 stockResults2<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
-```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
-``` r
 g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol)) 
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
 
-![](../images/unnamed-chunk-13-1.png)<!-- -->
+![](../images/unnamed-chunk-14-1.png)<!-- -->
 
 I’m am by no means a financial wizard, but I think you can attribute the
 drop to the anticipation of the Federal Reserve raising interest rates
@@ -340,43 +357,28 @@ Lets give Amazon a shot.
 
 ``` r
 stockResults3<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
-```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
-``` r
 g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
 
-![](../images/unnamed-chunk-14-1.png)<!-- -->
+![](../images/unnamed-chunk-15-1.png)<!-- -->
 
 It looks awfully similar to Microsoft. Just for fun, let’s do Apple.
 
 ``` r
 stockResults4<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom="2022-06-06",lookupDateTo="2022-06-15",multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
-```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
-``` r
 g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
 
-![](../images/unnamed-chunk-15-1.png)<!-- --> I think it is safe to say
-there is a pattern going on here. Let’s plot all three at one and
-compare.
+![](../images/unnamed-chunk-16-1.png)<!-- -->
+
+I think it is safe to say there is a pattern going on here. Let’s plot
+all three at one and compare.
 
 Wait, we have the data for the three companies stored in three different
 data frames. Let’s see if we can join them together to make plotting
@@ -447,7 +449,7 @@ g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-17-1.png)<!-- -->
+![](../images/unnamed-chunk-18-1.png)<!-- -->
 
 That wasn’t quite as dramatic as I hopped. I think the Microsoft price
 is distorting the results a bit. Let’s try it again without Microsoft.
@@ -459,7 +461,7 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-18-1.png)<!-- -->
+![](../images/unnamed-chunk-19-1.png)<!-- -->
 
 Contingency Tables!
 
@@ -511,13 +513,14 @@ g + geom_boxplot(fill = "grey") + coord_flip() +
   labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
 ```
 
-![](../images/unnamed-chunk-21-1.png)<!-- --> Let’s try a scatterplot to
-see if we can figure out when that extremly high trade volume for Amazon
-occurred. Interesting enough, it looks like the high volume occurred
-before the fed rate hike. All stocks had a noticable gain in volume the
-day before the rate hike. This is further evidence that traders were
-expecting the price to take a hit and likely sold before the stock hit
-bottom.
+![](../images/unnamed-chunk-22-1.png)<!-- -->
+
+Let’s try a scatterplot to see if we can figure out when that extremly
+high trade volume for Amazon occurred. Interesting enough, it looks like
+the high volume occurred before the fed rate hike. All stocks had a
+noticable gain in volume the day before the rate hike. This is further
+evidence that traders were expecting the price to take a hit and likely
+sold before the stock hit bottom.
 
 ``` r
 g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
@@ -525,9 +528,10 @@ g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
   labs(x="Date", y="Volume", title="Stock Volume Analysis")
 ```
 
-![](../images/unnamed-chunk-22-1.png)<!-- --> A scatter plot might not
-be the best view given the data. Let’s try a side-by-side bar chart
-instead.
+![](../images/unnamed-chunk-23-1.png)<!-- -->
+
+A scatter plot might not be the best view given the data. Let’s try a
+side-by-side bar chart instead.
 
 ``` r
 sumData <- stockResultsAll %>% group_by(Symbol,tDate) 
@@ -538,7 +542,7 @@ sumData <- stockResultsAll %>% group_by(Symbol,tDate)
     scale_fill_discrete(name = "Symbol")
 ```
 
-![](../images/unnamed-chunk-23-1.png)<!-- -->
+![](../images/unnamed-chunk-24-1.png)<!-- -->
 
 Lets see if we can spot a long term trend pricing average. Start with a
 histogram of Microsoft’s closing price over the last 30 days. It’s hard
@@ -550,47 +554,32 @@ g<-ggplot(data=stockResults1,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
 ```
 
-![](../images/unnamed-chunk-24-1.png)<!-- --> Here we are graphing the
-results from the last 120 days. It looks like the closing average is
-starting to center around the $280 price point. Lets try one more with
-additional observations.
+![](../images/unnamed-chunk-25-1.png)<!-- -->
+
+Here we are graphing the results from the last 120 days. It looks like
+the closing average is starting to center around the $280 price point.
+Lets try one more with additional observations.
 
 ``` r
 stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-120,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
-```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
-``` r
 g<-ggplot(data=stockResults5,aes(x=c))
   g + geom_histogram(bins=30, fill="blue") +
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 120 Days")
 ```
 
-![](../images/unnamed-chunk-25-1.png)<!-- -->
+![](../images/unnamed-chunk-26-1.png)<!-- -->
 
 Here we are graphing the results from the last 365 days. The closing
-average is definitely centered around the $280 price point. Lets try one
-more with additional observations.
+average is definitely centered around the $280 price point. Looks like
+now (06/19/2022) would be a good time to buy some stock!
 
 ``` r
 stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
-```
 
-    ## [1] "Running stockAggregateLookup function"
-    ## [1] "Running isValidSymbol function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidDate function"
-    ## [1] "Running isValidTimespan function"
-
-``` r
 g<-ggplot(data=stockResults5,aes(x=c))
   g + geom_histogram(bins=30, fill="blue") +
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 365 Days")
 ```
 
-![](../images/unnamed-chunk-26-1.png)<!-- -->
+![](../images/unnamed-chunk-27-1.png)<!-- -->

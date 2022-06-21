@@ -13,9 +13,15 @@ output:
 
 You might be asking yourself, what exactly is a vignette. Well let me save you the hastle of a google search and answer that question here. A vignette is defined as "a brief evocative description, account, or episode". Now you might ask yourself what evocative means. Rather then get caught in an endless loop, let use an easier to understand definition of a vignette. In this context a vignette is just a short, informative guide for how to use and deploy a lookup on financial data.
 
-This vignette will be centered around a call to an API. The API I chose was created by Polygon.io and it is centered around financial data, specifically stock prices.
+This vignette will be centered around a call to an API. The API I chose was created by Polygon.io and it is centered around financial data, specifically stock prices. The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
 
-Below is a list of packages that were used in the creation of this vignette. The tidyverse, knitr, and dplyr packages are commonly used r packages with a wide variety of uses. The httr and jsonlite packages will be used to call an API an display the results. The remaining packages are lesser known r packages to be used specifically for stock related functions.
+Below is a list of packages that were used in the creation of this vignette. The tidyverse package is a collection of commonly used packages. The knitr package is used to knit the document. The httr and jsonlite packages will be used to call an API an display the results. The TTR package is lesser known r package used specifically for stock related functions.
+
+* tidyverse
+* knitr
+* httr
+* jsonlite
+* TTR
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,fig.path = "../images/")
@@ -29,22 +35,26 @@ library(jsonlite)
 library(TTR) #Used in the stock symbol lookup
 ```
 
-The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
+In addition to the pre-built r packages, there are also a number of functions that were created specifically for this vinette. Here is a list of the functions and a brief description of what they do:
+
+* getSymbolByCompanyName() - Pass in the company name and returns its stocks symbol
+* isValidSymbol() - Pass in a stock symbol to make sure it is a valid symbol
+* isValidDate() - Pass in a date to make sure it is in the correct date format
+* stockDailyLookup() - Used to get the daily open, close and other related info for a specific day
+* stockAggregateLookup() - Used to get Aggregated Stock information with a number of different options
+* isValidTimespan() - Makes sure the timespan option used in the Aggregate Lookup is valid
 
 The lookups will require a companies stock symbol to be used. If you aren't sure what a specific companies stock symbol is, you can use this handy stock symbol lookup. Just pass in the name of the company you are interested, and the stock symbol will be returned.
 
 ```{r}
 getSymbolByCompanyName<-function(CompanyName){
- 
-  print("Running getSymbolByCompanyName function")
-  
   #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
   if (exists('symbolsDF')==FALSE) {
     symbolsDF <<- stockSymbols("NASDAQ")  
   }
  
   companyNameDF<-symbolsDF %>% filter(grepl(CompanyName,x=Name,ignore.case = TRUE))
-  return(companyNameDF)
+  return(companyNameDF$Name)
 }  
 ```
 
@@ -64,7 +74,6 @@ myAPIKey<-"HewJYeUXkzQB4Fc0VHnfyY7d4roQVjDi"
 ```{r}
 isValidSymbol <- function(symbolName){
   #Checks to make sure the stock ticker name is value
-  print("Running isValidSymbol function")
   
   #Check to see if the function has already been called, if so, skip over the stockSymbols call to improve performance
   if (exists('symbolsDF')==FALSE) {
@@ -82,15 +91,10 @@ isValidSymbol <- function(symbolName){
 }
 ```
 
-
-
-
-
 ```{r}
 isValidDate <- function(DateToCheck){
   #Dates in these API lookup must be a valid date and in the YYYY-MM-DD format
   
-  print("Running isValidDate function")
   d <- try(as.Date(DateToCheck, format="%Y-%m-%d"))
   if("try-error" %in% class(d) || is.na(d)) {
     return(FALSE)
@@ -102,8 +106,7 @@ isValidDate <- function(DateToCheck){
 
 ```{r}
 stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
-  
-  print("Running stockDailyLookup function")
+  #Calls the daily stock API
   
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
@@ -120,7 +123,6 @@ stockDailyLookup <- function(symbolName, lookupDate, printSummary=TRUE){
   
   apiDailyData <-GET(apiLookup)
   apiDailyDataParsed <- fromJSON(rawToChar(apiDailyData$content))
-  #print(apiDailyDataParsed)
 
   if (apiDailyDataParsed$status=="NOT_FOUND"){
     return(list("success"=FALSE,"resultsMessage"="Unknown error occurred. Date might be on a weekend or holiday"))
@@ -148,22 +150,20 @@ dailyResults<-stockDailyLookup("AAPL","2022-06-01",TRUE)
 ```
 
 
-
-
 Pulling data for a specific company on a single day is great and everything, but it doesn't tell us any trends. What if we wanted to pull some history to see if the stock has been going up or down. For that we will need another API. Enter the 'Aggregate' API lookup.
 
-This has some additional parameters that will need to be defined and validated
-StockTicker - The ticker symbol of the stock/equity.
-DateFrom - The start of the aggregate time window with the format YYYY-MM-DD
-DateTo - The end of the aggregate time window with the format YYYY-MM-DD
-Multiplier - The size of the timespan multiplier.
-timespan - The size of the time window - valid options ('minute','hour','day','week','month','quarter','year')
+This has some additional parameters that will need to be defined and validated:
+
+* StockTicker - The ticker symbol of the stock/equity.
+* DateFrom - The start of the aggregate time window with the format YYYY-MM-DD
+* DateTo - The end of the aggregate time window with the format YYYY-MM-DD
+* Multiplier - The size of the timespan multiplier.
+* timespan - The size of the time window - valid options ('minute','hour','day','week','month','quarter','year')
 
 
 ```{r}
 isValidTimespan <- function(timespanToCheck){
   #Make sure the timespan is valid
-  print("Running isValidTimespan function")
   
   timespanToCheck<-tolower(timespanToCheck)
   
@@ -180,9 +180,7 @@ isValidTimespan <- function(timespanToCheck){
 
 ```{r}
 stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multiplier, timespan, printSummary=TRUE, returnResultsList=TRUE){
-  
-  print("Running stockAggregateLookup function")
-  
+
   #First lets make sure the symbol is valid
   if (isValidSymbol(symbolName)==FALSE){
     return(list("success"=FALSE,"resultsMessage"="Symbol not found"))
@@ -263,7 +261,9 @@ Lets start with a 30 day lookup on Microsoft.
 ```{r}
 stockResults1<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-31,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 ```
+
 Here is a printout of some of the values returned from the lookup, as well as the readable date field called 'tDate'.
+
 ```{r}
 as_tibble(stockResults1)
 ```
@@ -276,6 +276,7 @@ g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
+
 That is quite the drop between June 6th and June 15th. Let's focus in on that window
 
 ```{r}
@@ -305,6 +306,7 @@ g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   g + geom_line(aes(x=tDate, y=o, color=Symbol)) +
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
+
 I think it is safe to say there is a pattern going on here. Let's plot all three at one and compare.
 
 Wait, we have the data for the three companies stored in three different data frames. Let's see if we can join them together to make plotting easier.
@@ -314,6 +316,7 @@ stockResultsAll<-full_join(stockResults2,stockResults3)
 stockResultsAll<-full_join(stockResultsAll,stockResults4)
 stockResultsAll
 ```
+
 That was easy. Now lets try and plot all three at once.
 
 ```{r}
@@ -339,12 +342,14 @@ Lets dig a bit deeper and compare the three companies and their closing prices. 
 stockResultsAll %>% group_by(Symbol) %>%
 summarise(avg = mean(c), med = median(c), var = var(c), min=min(c), max=max(c))
 ```
+
 Another thing to look at is the trade volume. Below you can see that Apple and Amazon were far more active in terms of trade value than Microsoft. This might have prevented the two stocks from dropping as much as Microsoft did.
 
 ```{r}
 stockResultsAll %>% group_by(Symbol) %>%
 summarise(avg = mean(v), med = median(v), var = var(v), min=min(v), max=max(v))
 ```
+
 Tables are net, but lets get back to plotting. Here is the same volume information, but in box plot form. Looking at the wisker size, you can see that Apple had more extreme amounts of volume where-as the volume for Microsoft and Amazon was largely consistent. Interesting though that Microsoft and Amazon are showing a couple outliers with Amazon having what appears to be and extremely high volume outlier.
 
 ```{r}
@@ -352,13 +357,17 @@ g <- ggplot(stockResultsAll, aes(x = Symbol, y = v))
 g + geom_boxplot(fill = "grey") + coord_flip() +
   labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
 ```
+
 Let's try a scatterplot to see if we can figure out when that extremly high trade volume for Amazon occurred. Interesting enough, it looks like the high volume occurred before the fed rate hike. All stocks had a noticable gain in volume the day before the rate hike. This is further evidence that traders were expecting the price to take a hit and likely sold before the stock hit bottom.
+
 ```{r}
 g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
   g + geom_point(size=3, shape=10) +
   labs(x="Date", y="Volume", title="Stock Volume Analysis")
 ```
+
 A scatter plot might not be the best view given the data. Let's try a side-by-side bar chart instead.
+
 ```{r}
 sumData <- stockResultsAll %>% group_by(Symbol,tDate) 
   g2 <- ggplot(sumData, aes(x = tDate, y = v))
@@ -375,7 +384,9 @@ g<-ggplot(data=stockResults1,aes(x=c))
   g + geom_histogram(bins=10, fill="blue") +
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
 ```
+
 Here we are graphing the results from the last 120 days. It looks like the closing average is starting to center around the $280 price point. Lets try one more with additional observations.
+
 ```{r}
 stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-120,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 
@@ -385,7 +396,8 @@ g<-ggplot(data=stockResults5,aes(x=c))
 
 ```
 
-Here we are graphing the results from the last 365 days. The closing average is definitely centered around the $280 price point. Looks like now (06/19/2022) would be a good time to buy some stock!
+Here we are graphing the results from the last 365 days. The closing average is definitely centered around the $280 price point with a higher upside. Looks like now (06/19/2022) would be a good time to buy some stock!
+
 ```{r}
 stockResults5<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
 
