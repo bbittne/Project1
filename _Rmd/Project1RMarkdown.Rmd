@@ -24,7 +24,7 @@ Below is a list of packages that were used in the creation of this vignette. The
 * TTR
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,fig.path = "../images/")
 
 library(tidyverse)
 library(knitr)
