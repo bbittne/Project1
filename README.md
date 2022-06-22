@@ -1,7 +1,7 @@
 ST558 - Project 1
 ================
 Bryan Bittner
-2022-06-21
+2022-06-22
 
 -   [Financial Data Vignette](#financial-data-vignette)
 -   [EDA](#eda)
@@ -306,7 +306,7 @@ well as the readable date field called ‘tDate’.
 as_tibble(stockResults1)
 ```
 
-    ## # A tibble: 19 × 11
+    ## # A tibble: 20 × 11
     ##           v    vw     o     c     h     l             t      n tDate               Symbol Name                               
     ##       <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>         <dbl>  <int> <dttm>              <chr>  <chr>                              
     ##  1 33175379  259.  255.  261.  262.  253. 1653278400000 386147 2022-05-22 23:00:00 MSFT   Microsoft Corporation - Common Sto…
@@ -328,6 +328,7 @@ as_tibble(stockResults1)
     ## 17 33111729  251.  248.  252.  255.  246. 1655265600000 410433 2022-06-14 23:00:00 MSFT   Microsoft Corporation - Common Sto…
     ## 18 33169160  245.  246.  245.  247.  243. 1655352000000 437473 2022-06-15 23:00:00 MSFT   Microsoft Corporation - Common Sto…
     ## 19 43081680  247.  245.  248.  250.  244. 1655438400000 426273 2022-06-16 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ## 20 29950605  253.  250.  254.  255.  250. 1655784000000 325284 2022-06-20 23:00:00 MSFT   Microsoft Corporation - Common Sto…
 
 Let try a graph of the data
 
