@@ -338,7 +338,7 @@ g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
 
-![](../images/unnamed-chunk-13-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 That is quite the drop between June 6th and June 15th. Let’s focus in on
 that window
@@ -351,7 +351,7 @@ g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
 
-![](../images/unnamed-chunk-14-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 I’m am by no means a financial wizard, but I think you can attribute the
 drop to the anticipation of the Federal Reserve raising interest rates
@@ -366,7 +366,7 @@ g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
 
-![](../images/unnamed-chunk-15-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 It looks awfully similar to Microsoft. Just for fun, let’s do Apple.
 
@@ -378,7 +378,7 @@ g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
 
-![](../images/unnamed-chunk-16-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 I think it is safe to say there is a pattern going on here. Let’s plot
 all three at one and compare.
@@ -452,7 +452,7 @@ g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-18-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 That wasn’t quite as dramatic as I hopped. I think the Microsoft price
 is distorting the results a bit. Let’s try it again without Microsoft.
@@ -464,7 +464,7 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](../images/unnamed-chunk-19-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 Contingency Tables!
 
@@ -516,7 +516,7 @@ g + geom_boxplot(fill = "grey") + coord_flip() +
   labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
 ```
 
-![](../images/unnamed-chunk-22-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 Let’s try a scatterplot to see if we can figure out when that extremly
 high trade volume for Amazon occurred. Interesting enough, it looks like
@@ -531,7 +531,7 @@ g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
   labs(x="Date", y="Volume", title="Stock Volume Analysis")
 ```
 
-![](../images/unnamed-chunk-23-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 A scatter plot might not be the best view given the data. Let’s try a
 side-by-side bar chart instead.
@@ -545,7 +545,7 @@ sumData <- stockResultsAll %>% group_by(Symbol,tDate)
     scale_fill_discrete(name = "Symbol")
 ```
 
-![](../images/unnamed-chunk-24-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 Lets see if we can spot a long term trend pricing average. Start with a
 histogram of Microsoft’s closing price over the last 30 days. It’s hard
@@ -557,7 +557,7 @@ g<-ggplot(data=stockResults1,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
 ```
 
-![](../images/unnamed-chunk-25-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 Here we are graphing the results from the last 120 days. It looks like
 the closing average is starting to center around the $280 price point.
@@ -571,7 +571,7 @@ g<-ggplot(data=stockResults5,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 120 Days")
 ```
 
-![](../images/unnamed-chunk-26-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 Here we are graphing the results from the last 365 days. The closing
 average is definitely centered around the $280 price point with a higher
@@ -586,4 +586,4 @@ g<-ggplot(data=stockResults5,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 365 Days")
 ```
 
-![](../images/unnamed-chunk-27-1.png)<!-- -->
+![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
