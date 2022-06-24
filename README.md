@@ -1,7 +1,7 @@
 ST558 - Project 1
 ================
 Bryan Bittner
-2022-06-22
+2022-06-23
 
 -   [Financial Data Vignette](#financial-data-vignette)
 -   [EDA](#eda)
@@ -306,7 +306,7 @@ well as the readable date field called ‘tDate’.
 as_tibble(stockResults1)
 ```
 
-    ## # A tibble: 20 × 11
+    ## # A tibble: 21 × 11
     ##           v    vw     o     c     h     l             t      n tDate               Symbol Name                               
     ##       <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>         <dbl>  <int> <dttm>              <chr>  <chr>                              
     ##  1 33175379  259.  255.  261.  262.  253. 1653278400000 386147 2022-05-22 23:00:00 MSFT   Microsoft Corporation - Common Sto…
@@ -319,16 +319,7 @@ as_tibble(stockResults1)
     ##  8 44008205  269.  264.  275.  275.  262. 1654142400000 532530 2022-06-01 23:00:00 MSFT   Microsoft Corporation - Common Sto…
     ##  9 28058958  270.  270.  270.  273.  268. 1654228800000 303810 2022-06-02 23:00:00 MSFT   Microsoft Corporation - Common Sto…
     ## 10 22397042  270.  272.  269.  274.  267. 1654488000000 260013 2022-06-05 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 11 22860677  271.  267.  272.  273.  266. 1654574400000 247047 2022-06-06 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 12 17372341  271.  272.  270.  273   270. 1654660800000 234208 2022-06-07 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 13 26439728  268.  268.  265.  273.  265. 1654747200000 301845 2022-06-08 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 14 31445841  255.  261.  253.  261.  253. 1654833600000 459375 2022-06-09 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 15 45913188  244.  245.  242.  249.  242. 1655092800000 587062 2022-06-12 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 16 28651487  244.  244.  244.  246.  242. 1655179200000 370359 2022-06-13 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 17 33111729  251.  248.  252.  255.  246. 1655265600000 410433 2022-06-14 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 18 33169160  245.  246.  245.  247.  243. 1655352000000 437473 2022-06-15 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 19 43081680  247.  245.  248.  250.  244. 1655438400000 426273 2022-06-16 23:00:00 MSFT   Microsoft Corporation - Common Sto…
-    ## 20 29950605  253.  250.  254.  255.  250. 1655784000000 325284 2022-06-20 23:00:00 MSFT   Microsoft Corporation - Common Sto…
+    ## # … with 11 more rows
 
 Let try a graph of the data
 
@@ -338,7 +329,7 @@ g<-ggplot(data=stockResults1,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price over 30 days")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 That is quite the drop between June 6th and June 15th. Let’s focus in on
 that window
@@ -351,7 +342,7 @@ g<-ggplot(data=stockResults2,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Microsoft Stock Price")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 I’m am by no means a financial wizard, but I think you can attribute the
 drop to the anticipation of the Federal Reserve raising interest rates
@@ -366,7 +357,7 @@ g<-ggplot(data=stockResults3,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Amazon Stock Price")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 It looks awfully similar to Microsoft. Just for fun, let’s do Apple.
 
@@ -378,7 +369,7 @@ g<-ggplot(data=stockResults4,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Apple Stock Price")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 I think it is safe to say there is a pattern going on here. Let’s plot
 all three at one and compare.
@@ -452,7 +443,7 @@ g<-ggplot(data = stockResultsAll,aes(x=tDate, color=Symbol))
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 That wasn’t quite as dramatic as I hopped. I think the Microsoft price
 is distorting the results a bit. Let’s try it again without Microsoft.
@@ -464,7 +455,7 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 Contingency Tables!
 
@@ -516,7 +507,7 @@ g + geom_boxplot(fill = "grey") + coord_flip() +
   labs(x="Volume", y="Stock Type", title="Stock Volume Analysis")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
 Let’s try a scatterplot to see if we can figure out when that extremly
 high trade volume for Amazon occurred. Interesting enough, it looks like
@@ -531,7 +522,7 @@ g<-ggplot(stockResultsAll, aes(x=tDate, y=v, color=Symbol))
   labs(x="Date", y="Volume", title="Stock Volume Analysis")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-23-1.png)<!-- -->
 
 A scatter plot might not be the best view given the data. Let’s try a
 side-by-side bar chart instead.
@@ -545,7 +536,7 @@ sumData <- stockResultsAll %>% group_by(Symbol,tDate)
     scale_fill_discrete(name = "Symbol")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 Lets see if we can spot a long term trend pricing average. Start with a
 histogram of Microsoft’s closing price over the last 30 days. It’s hard
@@ -557,7 +548,7 @@ g<-ggplot(data=stockResults1,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 30 Days")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-25-1.png)<!-- -->
 
 Here we are graphing the results from the last 120 days. It looks like
 the closing average is starting to center around the $280 price point.
@@ -571,7 +562,7 @@ g<-ggplot(data=stockResults5,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 120 Days")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 Here we are graphing the results from the last 365 days. The closing
 average is definitely centered around the $280 price point with a higher
@@ -586,4 +577,4 @@ g<-ggplot(data=stockResults5,aes(x=c))
   labs(x="Stock Price", y="Count", title="Microsoft Stock Price - 365 Days")
 ```
 
-![](C:/Users/bbittner/Repos/Project1/README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
+![](README_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
