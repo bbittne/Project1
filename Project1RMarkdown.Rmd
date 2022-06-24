@@ -15,6 +15,8 @@ You might be asking yourself, what exactly is a vignette. Well let me save you t
 
 This vignette will be centered around a call to an API. The API I chose was created by Polygon.io and it is centered around financial data, specifically stock prices. The advantage of using an API in code is that we can customize function(s) and have them automatically run and retrieve updated results. This beats manually going out to a website to check the stock ticker.
 
+One thing to note - I do not claim to be an investment planner or anywhere close to an expert on stocks. Any suggestions represented here are meant for general entertainment and interests. Do not heed any of my advice for trading as you will for sure lose money!
+
 Below is a list of packages that were used in the creation of this vignette. The tidyverse package is a collection of commonly used packages. The knitr package is used to knit the document. The httr and jsonlite packages will be used to call an API an display the results. The TTR package is lesser known r package used specifically for stock related functions.
 
 * tidyverse
@@ -28,9 +30,7 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 library(tidyverse)
 library(knitr)
-library(dplyr)
 library(httr)
-library(ggplot2)
 library(jsonlite)
 library(TTR) #Used in the stock symbol lookup
 ```
@@ -239,7 +239,6 @@ stockAggregateLookup <- function(symbolName, lookupDateFrom, lookupDateTo, multi
 
   if (returnResultsList==TRUE) {
     parsedResults<-apiAggDataParsed$results %>% mutate(Symbol=symbolsDFFiltered$Symbol,Name=symbolsDFFiltered$Name)
-    #print(parsedResults)
     return(parsedResults)
   }
   
@@ -334,9 +333,36 @@ g<-ggplot(data = filter(stockResultsAll %>% filter(Symbol!="MSFT"), Symbol == "A
   labs(x="Date Range", y="Stock Price", title="Stock Price Compare")
 ```
 
-Contingency Tables!
+Contingency Tables
 
-Lets dig a bit deeper and compare the three companies and their closing prices. If we build a table grouped by stock symbol, we can see the summary stats for each company. Looking at the output below, you can see that Microsoft had by far the largest variance. Meaning they were likely most impacted by the rate hike.
+One stat you might want to know is how may times the stock has closed above the opening price - ie. how may days the stock went up in value. Lets build a quick contingency table to check. In the table below, the 'TRUE' column means the stock price went up and the 'FALSE' column means the stock price went down. 
+
+```{r}
+table(stockResultsAll$Symbol,stockResultsAll$c>stockResultsAll$o)
+```
+
+Using eight days probably isn't that helpful. Let's go back a full year and try again.
+
+```{r}
+#Get a full year's worth of data from our 3 stocks
+stockResultsMSFT365<-stockAggregateLookup(symbolName="MSFT",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+stockResultsAMZN365<-stockAggregateLookup(symbolName="AMZN",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+stockResultsAAPL365<-stockAggregateLookup(symbolName="AAPL",lookupDateFrom=Sys.Date()-365,lookupDateTo=Sys.Date()-1,multiplier = 1,timespan="day",printSummary=FALSE,returnResultsList=TRUE)
+```
+Looking at a full year is interesting. The number of days the stock closes higher is relatively close to the number of days that stock closed lower. Looking at Amazon, I would suggest staying away from there stock for a while!
+
+```{r}
+#Combine the results and display the table
+stockResults365All<-full_join(stockResultsMSFT365,stockResultsAMZN365)
+stockResults365All<-full_join(stockResults365All,stockResultsAAPL365)
+
+table(stockResults365All$Symbol,stockResults365All$c>stockResults365All$o)
+```
+
+
+Numerical Summaries
+
+Lets go back to the more recent history around the federal rate hike to gain additional insights there. We can dig a bit deeper and compare the three companies and their closing prices. If we build a table grouped by stock symbol, we can see the summary stats for each company. Looking at the output below, you can see that Microsoft had by far the largest variance. Meaning they were likely most impacted by the rate hike.
 
 ```{r}
 stockResultsAll %>% group_by(Symbol) %>%
